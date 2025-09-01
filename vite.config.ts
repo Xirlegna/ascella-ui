@@ -1,23 +1,32 @@
 import { defineConfig } from 'vite';
+import { extname, relative, resolve } from 'path';
+import { glob } from 'glob';
+import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
-import path from 'path';
+import dts from 'vite-plugin-dts';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), dts()],
   build: {
     lib: {
-      entry: path.resolve(__dirname, 'src/index.ts'),
-      name: 'YourOrgUI',
-      formats: ['es', 'umd'],
-      fileName: (format) => `index.${format}.js`,
+      entry: resolve(__dirname, 'src/index.ts'),
+      name: 'ascella-ui',
+      formats: ['es'],
+      fileName: 'ascella-ui',
     },
     rollupOptions: {
-      external: ['react', 'react-dom'],
+      external: ['react', 'react/jsx-runtime'],
+      input: Object.fromEntries(
+        glob
+          .sync('src/**/*.{ts,tsx}')
+          .map((file) => [
+            relative('src', file.slice(0, file.length - extname(file).length)),
+            fileURLToPath(new URL(file, import.meta.url)),
+          ])
+      ),
       output: {
-        globals: {
-          react: 'React',
-          'react-dom': 'ReactDOM',
-        },
+        assetFileNames: 'assets/[name][extname]',
+        entryFileNames: '[name].js',
       },
     },
   },
